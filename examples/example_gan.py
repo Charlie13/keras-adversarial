@@ -1,3 +1,9 @@
+"""
+2017-3-30, Sungjin Kim, jamessungjin.kim@gmail.com
+- (x/n) --> int(x/n) for python3 compatibility
+- batchnorm mode is changed for discriminator from mode=1 to mode=2
+"""
+
 import matplotlib as mpl
 
 # This line allows mpl to run with no DISPLAY defined
@@ -34,10 +40,10 @@ def dropout_layer(dropout):
 
 def model_generator(latent_dim, input_shape, hidden_dim=1024, reg=lambda: l1(1e-5), batch_norm_mode=0):
     return Sequential([
-        Dense(hidden_dim / 4, name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
+        Dense(int(hidden_dim / 4), name="generator_h1", input_dim=latent_dim, W_regularizer=reg()),
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
-        Dense(hidden_dim / 2, name="generator_h2", W_regularizer=reg()),
+        Dense(int(hidden_dim / 2), name="generator_h2", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         Dense(hidden_dim, name="generator_h3", W_regularizer=reg()),
@@ -57,11 +63,11 @@ def model_discriminator(input_shape, hidden_dim=1024, reg=lambda: l1l2(1e-5, 1e-
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         dropout_layer(dropout),
-        Dense(hidden_dim / 2, name="discriminator_h2", W_regularizer=reg()),
+        Dense(int(hidden_dim / 2), name="discriminator_h2", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         dropout_layer(dropout),
-        Dense(hidden_dim / 4, name="discriminator_h3", W_regularizer=reg()),
+        Dense(int(hidden_dim / 4), name="discriminator_h3", W_regularizer=reg()),
         batch_norm(batch_norm_mode),
         LeakyReLU(0.2),
         dropout_layer(dropout),
@@ -128,15 +134,14 @@ def main():
     # x \in R^{28x28}
     input_shape = (28, 28)
     # generator (z -> x)
-    generator = model_generator(latent_dim, input_shape)
+    generator = model_generator(latent_dim, input_shape, batch_norm_mode=2)
     # discriminator (x -> y)
-    discriminator = model_discriminator(input_shape)
+    discriminator = model_discriminator(input_shape, batch_norm_mode=1)
     example_gan(AdversarialOptimizerSimultaneous(), "output/gan",
                 opt_g=Adam(1e-4, decay=1e-4),
                 opt_d=Adam(1e-3, decay=1e-4),
                 nb_epoch=100, generator=generator, discriminator=discriminator,
                 latent_dim=latent_dim)
-
-
+    
 if __name__ == "__main__":
     main()
